@@ -255,7 +255,7 @@ typedef struct lua_TValue {
 #define setdeadvalue(obj)	settt_(obj, LUA_TDEADKEY)
 
 
-
+// 将obj2的值付给obj1
 #define setobj(L,obj1,obj2) \
 	{ TValue *io1=(obj1); *io1 = *(obj2); \
 	  (void)L; checkliveness(L,io1); }

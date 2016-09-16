@@ -56,16 +56,20 @@ const char lua_ident[] =
 #define api_checkstackindex(l, i, o)  \
 	api_check(l, isstackindex(i, o), "index not in the stack")
 
-
+// 寻找栈上相应的数据
 static TValue *index2addr (lua_State *L, int idx) {
+		 // 得到CallInfo
   CallInfo *ci = L->ci;
   if (idx > 0) {
+			 // 如果索引是正的
     TValue *o = ci->func + idx;
     api_check(L, idx <= ci->top - (ci->func + 1), "unacceptable index");
     if (o >= L->top) return NONVALIDVALUE;
     else return o;
   }
   else if (!ispseudo(idx)) {  /* negative index */
+			 // 如果索引是负值
+			 // 那么是从栈顶向下找
     api_check(L, idx != 0 && -idx <= L->top - (ci->func + 1), "invalid index");
     return L->top + idx;
   }
@@ -165,6 +169,7 @@ LUA_API int lua_absindex (lua_State *L, int idx) {
 
 
 LUA_API int lua_gettop (lua_State *L) {
+		 //计算top到CallInfo的func+1的距离，就是栈上数据的数量
   return cast_int(L->top - (L->ci->func + 1));
 }
 
@@ -236,6 +241,7 @@ LUA_API void lua_copy (lua_State *L, int fromidx, int toidx) {
 
 LUA_API void lua_pushvalue (lua_State *L, int idx) {
   lua_lock(L);
+	//将栈顶的值设置为指定栈中位置的值
   setobj2s(L, L->top, index2addr(L, idx));
   api_incr_top(L);
   lua_unlock(L);
@@ -344,7 +350,10 @@ LUA_API size_t lua_stringtonumber (lua_State *L, const char *s) {
 
 LUA_API lua_Number lua_tonumberx (lua_State *L, int idx, int *pisnum) {
   lua_Number n;
+	// 从堆栈上拿到相应的数据
   const TValue *o = index2addr(L, idx);
+	// 进行转换，结果保存在n当中
+	// 返回是否是数字
   int isnum = tonumber(o, &n);
   if (!isnum)
     n = 0;  /* call to 'tonumber' may change 'n' even if it fails */
@@ -487,10 +496,12 @@ LUA_API const char *lua_pushlstring (lua_State *L, const char *s, size_t len) {
   return getstr(ts);
 }
 
-
+// 向栈上推一个字符串
 LUA_API const char *lua_pushstring (lua_State *L, const char *s) {
   lua_lock(L);
+	// 空串
   if (s == NULL)
+			 // 直接栈顶置为nil
     setnilvalue(L->top);
   else {
     TString *ts;
@@ -498,6 +509,7 @@ LUA_API const char *lua_pushstring (lua_State *L, const char *s) {
     setsvalue2s(L, L->top, ts);
     s = getstr(ts);  /* internal copy's address */
   }
+	// 增加栈顶后进行GC
   api_incr_top(L);
   luaC_checkGC(L);
   lua_unlock(L);
@@ -602,6 +614,8 @@ static int auxgetstr (lua_State *L, const TValue *t, const char *k) {
 
 
 LUA_API int lua_getglobal (lua_State *L, const char *name) {
+		 // 从全局的变量表中直接拿出相应的变量
+		 // 所有Lua的线程(fiber)共享全局状态g_state
   Table *reg = hvalue(&G(L)->l_registry);
   lua_lock(L);
   return auxgetstr(L, luaH_getint(reg, LUA_RIDX_GLOBALS), name);
@@ -646,7 +660,9 @@ LUA_API int lua_geti (lua_State *L, int idx, lua_Integer n) {
 LUA_API int lua_rawget (lua_State *L, int idx) {
   StkId t;
   lua_lock(L);
+	// 得到相应数据的位置
   t = index2addr(L, idx);
+	// 检查是否是table
   api_check(L, ttistable(t), "table expected");
   setobj2s(L, L->top - 1, luaH_get(hvalue(t), L->top - 1));
   lua_unlock(L);
@@ -952,6 +968,7 @@ LUA_API int lua_pcallk (lua_State *L, int nargs, int nresults, int errfunc,
   lua_lock(L);
   api_check(L, k == NULL || !isLua(L->ci),
     "cannot use continuations inside hooks");
+	// 检查是否有args数量＋1的元素在栈上
   api_checknelems(L, nargs+1);
   api_check(L, L->status == LUA_OK, "cannot do calls on non-normal thread");
   checkresults(L, nargs, nresults);

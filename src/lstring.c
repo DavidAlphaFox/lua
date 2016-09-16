@@ -135,7 +135,9 @@ static TString *createstrobj (lua_State *L, size_t l, int tag, unsigned int h) {
   GCObject *o;
   size_t totalsize;  /* total size of TString object */
   totalsize = sizelstring(l);
+	// 创建Object对象
   o = luaC_newobj(L, tag, totalsize);
+	// 转型
   ts = gco2ts(o);
   ts->hash = h;
   ts->extra = 0;
@@ -145,7 +147,9 @@ static TString *createstrobj (lua_State *L, size_t l, int tag, unsigned int h) {
 
 
 TString *luaS_createlngstrobj (lua_State *L, size_t l) {
+		 // 创建新的LuaObject，并转型为String类型
   TString *ts = createstrobj(L, l, LUA_TLNGSTR, G(L)->seed);
+	// 设置长度
   ts->u.lnglen = l;
   return ts;
 }
@@ -198,12 +202,14 @@ static TString *internshrstr (lua_State *L, const char *str, size_t l) {
 */
 TString *luaS_newlstr (lua_State *L, const char *str, size_t l) {
   if (l <= LUAI_MAXSHORTLEN)  /* short string? */
+			 // 如果是足够短的字符串，则使用永久性的缓存
     return internshrstr(L, str, l);
   else {
     TString *ts;
     if (l >= (MAX_SIZE - sizeof(TString))/sizeof(char))
       luaM_toobig(L);
     ts = luaS_createlngstrobj(L, l);
+		// 填充TString类型的数据部分
     memcpy(getstr(ts), str, l * sizeof(char));
     return ts;
   }
@@ -217,17 +223,21 @@ TString *luaS_newlstr (lua_State *L, const char *str, size_t l) {
 ** check hits.
 */
 TString *luaS_new (lua_State *L, const char *str) {
+		 // 使用的是拉链hash
   unsigned int i = point2uint(str) % STRCACHE_N;  /* hash */
   int j;
   TString **p = G(L)->strcache[i];
   for (j = 0; j < STRCACHE_M; j++) {
+			 // 找缓存，找到直接返回
     if (strcmp(str, getstr(p[j])) == 0)  /* hit? */
       return p[j];  /* that is it */
   }
   /* normal route */
+	// 没找到就淘汰最先加入到缓存的字符串
   for (j = STRCACHE_M - 1; j > 0; j--)
     p[j] = p[j - 1];  /* move out last element */
   /* new element is first in the list */
+	// 更新第一个位置的字符串
   p[0] = luaS_newlstr(L, str, strlen(str));
   return p[0];
 }

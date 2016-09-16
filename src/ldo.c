@@ -61,10 +61,13 @@
 #define luai_jmpbuf		int  /* dummy variable */
 
 #elif defined(LUA_USE_POSIX)				/* }{ */
-
+// 在POSIX中使用带有下划线的版本效率会更高一些
 /* in POSIX, try _longjmp/_setjmp (more efficient) */
 #define LUAI_THROW(L,c)		_longjmp((c)->b, 1)
+// 设置跳转成功后，才会去执行相应的函数
 #define LUAI_TRY(L,c,a)		if (_setjmp((c)->b) == 0) { a }
+// jmp_buf是一个int型的数组
+// 该数组的大小取决于CPU寄存器的大小
 #define luai_jmpbuf		jmp_buf
 
 #else							/* }{ */
@@ -79,7 +82,7 @@
 #endif							/* } */
 
 
-
+// lua将longjmp变成了一个链表
 /* chain list of long jump buffers */
 struct lua_longjmp {
   struct lua_longjmp *previous;

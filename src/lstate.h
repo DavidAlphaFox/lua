@@ -71,6 +71,12 @@ typedef struct stringtable {
 ** the function index so that, in case of errors, the continuation
 ** function can be called with the correct top.
 */
+/*
+ * 当一个Lua的线程暂停，'func' 假装上层函数就是栈上的一个暂存的值
+ * 在这种情况下，实际的'func'值是保存在extra区域中,
+ * 当一个函数呼叫另一个函数的时候，出现错误了，那么它可以正常的恢复栈顶。
+ * 简而言之，就是类似C语言的调用栈，但是更加复杂一些。
+ */
 typedef struct CallInfo {
   StkId func;  /* function index in the stack */
   StkId	top;  /* top for this function */
@@ -116,6 +122,7 @@ typedef struct CallInfo {
 ** 'global state', shared by all threads of this state
 */
 typedef struct global_State {
+		 //内存分配器
   lua_Alloc frealloc;  /* function to reallocate memory */
   void *ud;         /* auxiliary data to 'frealloc' */
   l_mem totalbytes;  /* number of bytes currently allocated - GCdebt */

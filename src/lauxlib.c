@@ -183,6 +183,7 @@ LUALIB_API int luaL_argerror (lua_State *L, int arg, const char *extramsg) {
 static int typeerror (lua_State *L, int arg, const char *tname) {
   const char *msg;
   const char *typearg;  /* name for the type of the actual argument */
+	// 得到参数的名字
   if (luaL_getmetafield(L, arg, "__name") == LUA_TSTRING)
     typearg = lua_tostring(L, -1);  /* use the given type name */
   else if (lua_type(L, arg) == LUA_TLIGHTUSERDATA)
@@ -195,6 +196,7 @@ static int typeerror (lua_State *L, int arg, const char *tname) {
 
 
 static void tag_error (lua_State *L, int arg, int tag) {
+		 // 报错	 
   typeerror(L, arg, lua_typename(L, tag));
 }
 
@@ -771,11 +773,15 @@ LUALIB_API int luaL_loadstring (lua_State *L, const char *s) {
 
 
 LUALIB_API int luaL_getmetafield (lua_State *L, int obj, const char *event) {
+		 // 如果没有元数据表的时候
+		 // 快速的退出
   if (!lua_getmetatable(L, obj))  /* no metatable? */
     return LUA_TNIL;
   else {
     int tt;
+		// 向栈推入数据
     lua_pushstring(L, event);
+	 
     tt = lua_rawget(L, -2);
     if (tt == LUA_TNIL)  /* is metafield nil? */
       lua_pop(L, 2);  /* remove metatable and metafield */
@@ -996,7 +1002,7 @@ LUALIB_API const char *luaL_gsub (lua_State *L, const char *s, const char *p,
   return lua_tostring(L, -1);
 }
 
-
+// 默认的lua内存分配器
 static void *l_alloc (void *ud, void *ptr, size_t osize, size_t nsize) {
   (void)ud; (void)osize;  /* not used */
   if (nsize == 0) {
@@ -1016,6 +1022,7 @@ static int panic (lua_State *L) {
 
 
 LUALIB_API lua_State *luaL_newstate (void) {
+		 // 创建一个新的Lua状态机
   lua_State *L = lua_newstate(l_alloc, NULL);
   if (L) lua_atpanic(L, &panic);
   return L;

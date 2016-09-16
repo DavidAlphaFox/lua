@@ -53,6 +53,7 @@
 */
 typedef struct LX {
   lu_byte extra_[LUA_EXTRASPACE];
+		 // lua的fiber的状态
   lua_State l;
 } LX;
 
@@ -61,6 +62,7 @@ typedef struct LX {
 ** Main thread combines a thread state and the global state
 */
 typedef struct LG {
+		 // 全局变量和主fiber的状态
   LX l;
   global_State g;
 } LG;
@@ -218,6 +220,7 @@ static void f_luaopen (lua_State *L, void *ud) {
 ** preinitialize a thread with consistent values without allocating
 ** any memory (to avoid errors)
 */
+// 初始化线程(fiber)
 static void preinit_thread (lua_State *L, global_State *g) {
   G(L) = g;
   L->stack = NULL;
@@ -256,8 +259,10 @@ LUA_API lua_State *lua_newthread (lua_State *L) {
   global_State *g = G(L);
   lua_State *L1;
   lua_lock(L);
+	// 先检查GC情况
   luaC_checkGC(L);
   /* create new thread */
+	// 创建新的线程
   L1 = &cast(LX *, luaM_newobject(L, LUA_TTHREAD, sizeof(LX)))->l;
   L1->marked = luaC_white(g);
   L1->tt = LUA_TTHREAD;
@@ -265,6 +270,7 @@ LUA_API lua_State *lua_newthread (lua_State *L) {
   L1->next = g->allgc;
   g->allgc = obj2gco(L1);
   /* anchor it on L stack */
+	// 将新的线程放入L的堆栈栈顶
   setthvalue(L, L->top, L1);
   api_incr_top(L);
   preinit_thread(L1, g);
@@ -276,6 +282,7 @@ LUA_API lua_State *lua_newthread (lua_State *L) {
   memcpy(lua_getextraspace(L1), lua_getextraspace(g->mainthread),
          LUA_EXTRASPACE);
   luai_userstatethread(L, L1);
+	// 初始化新线程的栈
   stack_init(L1, L);  /* init stack */
   lua_unlock(L);
   return L1;
@@ -295,18 +302,24 @@ void luaE_freethread (lua_State *L, lua_State *L1) {
 LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   int i;
   lua_State *L;
+	// 全局状态
   global_State *g;
+	// 分配一个主线程＋全局状态的结构
   LG *l = cast(LG *, (*f)(ud, NULL, LUA_TTHREAD, sizeof(LG)));
   if (l == NULL) return NULL;
+	
   L = &l->l.l;
   g = &l->g;
+	// 下一个fiber是空
   L->next = NULL;
+	// 标记为LUA的线程类型
   L->tt = LUA_TTHREAD;
   g->currentwhite = bitmask(WHITE0BIT);
   L->marked = luaC_white(g);
   preinit_thread(L, g);
   g->frealloc = f;
   g->ud = ud;
+	// 全局中主线程设置为L
   g->mainthread = L;
   g->seed = makeseed(L);
   g->gcrunning = 0;  /* no GC while building state */
@@ -334,6 +347,7 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
     close_state(L);
     L = NULL;
   }
+	// 返回主线程
   return L;
 }
 

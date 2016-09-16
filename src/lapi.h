@@ -10,7 +10,8 @@
 
 #include "llimits.h"
 #include "lstate.h"
-
+//此处为指针的++
+//StkId 实际上是TValue的指针
 #define api_incr_top(L)   {L->top++; api_check(L, L->top <= L->ci->top, \
 				"stack overflow");}
 
