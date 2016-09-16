@@ -722,21 +722,31 @@ LUA_API int lua_yieldk (lua_State *L, int nresults, lua_KContext ctx,
 int luaD_pcall (lua_State *L, Pfunc func, void *u,
                 ptrdiff_t old_top, ptrdiff_t ef) {
   int status;
+	//得到当前函数的调用信息，因为它调用了新的函数
+	//它的信息马上就称为了旧的了
   CallInfo *old_ci = L->ci;
   lu_byte old_allowhooks = L->allowhook;
   unsigned short old_nny = L->nny;
   ptrdiff_t old_errfunc = L->errfunc;
+	// 新的异常处理函数
   L->errfunc = ef;
   status = luaD_rawrunprotected(L, func, u);
   if (status != LUA_OK) {  /* an error occurred? */
+			 //调用失败了
+			 //拿到老的栈地址，old_top是长度而不是地址
     StkId oldtop = restorestack(L, old_top);
+		// 删除掉闭包,清理upvalue
     luaF_close(L, oldtop);  /* close possible pending closures */
+		// 更新栈顶为错误信息
     seterrorobj(L, status, oldtop);
+		// 恢复现场
     L->ci = old_ci;
     L->allowhook = old_allowhooks;
     L->nny = old_nny;
+		// 调整栈
     luaD_shrinkstack(L);
   }
+	// 恢复错误处理函数
   L->errfunc = old_errfunc;
   return status;
 }

@@ -28,7 +28,7 @@
 #define luaD_checkstack(L,n)	luaD_checkstackaux(L,n,(void)0,(void)0)
 
 
-
+//计算需要保存的栈的大小
 #define savestack(L,p)		((char *)(p) - (char *)L->stack)
 #define restorestack(L,n)	((TValue *)((char *)L->stack + (n)))
 

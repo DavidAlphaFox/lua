@@ -153,19 +153,29 @@ void luaE_shrinkCI (lua_State *L) {
 static void stack_init (lua_State *L1, lua_State *L) {
   int i; CallInfo *ci;
   /* initialize stack array */
+	//创建新的stack
   L1->stack = luaM_newvector(L, BASIC_STACK_SIZE, TValue);
+	// 设置栈大小
   L1->stacksize = BASIC_STACK_SIZE;
-  for (i = 0; i < BASIC_STACK_SIZE; i++)
+	// 将栈所有元素设置为nil
+  for (i = 0; i < BASIC_STACK_SIZE; i++)			 
     setnilvalue(L1->stack + i);  /* erase new stack */
+	//设置栈顶
   L1->top = L1->stack;
+	//设置整个栈的最后一个元素
   L1->stack_last = L1->stack + L1->stacksize - EXTRA_STACK;
   /* initialize first ci */
+	//取得base_ci的地址
   ci = &L1->base_ci;
+	//双向指针的都为NULL
   ci->next = ci->previous = NULL;
   ci->callstatus = 0;
+	// ci的func指向栈顶
   ci->func = L1->top;
   setnilvalue(L1->top++);  /* 'function' entry for this 'ci' */
+	// 该ci的top设置为最小栈顶
   ci->top = L1->top + LUA_MINSTACK;
+	//设置状态机的当前正在调用的函数信息
   L1->ci = ci;
 }
 
@@ -205,6 +215,7 @@ static void init_registry (lua_State *L, global_State *g) {
 static void f_luaopen (lua_State *L, void *ud) {
   global_State *g = G(L);
   UNUSED(ud);
+	// 初始化L的栈
   stack_init(L, L);  /* init stack */
   init_registry(L, g);
   luaS_init(L);

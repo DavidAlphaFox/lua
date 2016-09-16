@@ -971,14 +971,20 @@ LUA_API int lua_pcallk (lua_State *L, int nargs, int nresults, int errfunc,
 	// 检查是否有args数量＋1的元素在栈上
   api_checknelems(L, nargs+1);
   api_check(L, L->status == LUA_OK, "cannot do calls on non-normal thread");
+	// 检查参数和返回值是否匹配
   checkresults(L, nargs, nresults);
+	// 受否有错误处理函数
   if (errfunc == 0)
     func = 0;
   else {
+			 // 有错误处理函数
+			 // 从栈上拿到错误处理函数
     StkId o = index2addr(L, errfunc);
     api_checkstackindex(L, errfunc, o);
     func = savestack(L, o);
   }
+	// 得到函数地址
+	// 此处注意了，top是指针类型，会自动按照指针的大小向下减少
   c.func = L->top - (nargs+1);  /* function to be called */
   if (k == NULL || L->nny > 0) {  /* no continuation or no yieldable? */
     c.nresults = nresults;  /* do a 'conventional' protected call */

@@ -78,7 +78,9 @@ typedef struct stringtable {
  * 简而言之，就是类似C语言的调用栈，但是更加复杂一些。
  */
 typedef struct CallInfo {
+		 // 函数的位置
   StkId func;  /* function index in the stack */
+		 //这个函数的栈顶	 
   StkId	top;  /* top for this function */
   struct CallInfo *previous, *next;  /* dynamic call link */
   union {
